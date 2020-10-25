@@ -1,4 +1,4 @@
-package com.freddiefujiwara.bps
+package com.example.bps
 
 import io.flutter.embedding.android.FlutterActivity
 

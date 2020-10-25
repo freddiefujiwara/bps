@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.freddiefujiwara.bps">
+    package="com.example.bps">
    <application
         android:label="bps"
         android:icon="@mipmap/ic_launcher">
