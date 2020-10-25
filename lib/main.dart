@@ -1,13 +1,16 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:web_scraper/web_scraper.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+final textProvider = StateProvider<String>((_) => '');
 final rakumaProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final String text = "flutter"; //useProvider(textProvider).state ;
   final webScraper = WebScraper('https://fril.jp');
   List<Map<String, dynamic>> items = [];
-  if (await webScraper.loadWebPage('/s?category_id=733&query=flutter')) {
+  if (await webScraper.loadWebPage('/s?category_id=733&query=$text')) {
     Map<String, dynamic> item;
     List<Map<String, dynamic>> titles = webScraper.getElement(
         'div.item-box__image-wrapper > a.link_search_image > img',
@@ -33,14 +36,71 @@ void main() {
   runApp(ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+String _useDebouncedSearch(TextEditingController controller) {
+  final search = useState(controller.text);
+
+  useEffect(() {
+    Timer timer;
+    void listener() {
+      timer?.cancel();
+      timer = Timer(
+        const Duration(milliseconds: 1000),
+        () => search.value = controller.text,
+      );
+    }
+
+    controller.addListener(listener);
+    return () {
+      timer?.cancel();
+      controller.removeListener(listener);
+    };
+  }, [controller]);
+
+  return search.value;
+}
+
+class MyApp extends HookWidget {
   @override
-  Widget build(BuildContext context) => MaterialApp(
-      home: Scaffold(
-          appBar: AppBar(
-            title: Text("Product Catalog"),
-          ),
-          body: MyHome()));
+  Widget build(BuildContext context) {
+    final controller = useTextEditingController();
+    final text = useProvider(textProvider);
+    print(_useDebouncedSearch(controller));
+    //text.state = _useDebouncedSearch(controller);
+    return MaterialApp(
+        home: Scaffold(
+            appBar: AppBar(
+              title: Text("Book Price Scouter"),
+              bottom: PreferredSize(
+                preferredSize: Size.fromHeight(48.0),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Container(
+                        margin: const EdgeInsets.only(left: 12.0, bottom: 8.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24.0),
+                        ),
+                        child: TextFormField(
+                          controller: controller,
+                          decoration: InputDecoration(
+                            hintText: "Search for a word",
+                            contentPadding: const EdgeInsets.only(left: 24.0),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.search,
+                      color: Colors.white,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            body: MyHome()));
+  }
 }
 
 class MyHome extends HookWidget {
